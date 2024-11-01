@@ -38,6 +38,18 @@ docker-compose up
 ```
 
 Este comando irá subir o container do PostgreSQL, após isso, é possível rodá-lo através de linha de comando ou pela interface gráfica.
+
+## Migrações do Identity
+Este projeto utiliza o ASP.NET Core Identity para gerenciar autenticação e autorização de usuários. Para configurar o banco de dados para o Identity, siga os passos abaixo:
+
+- Adicionar a Migração: Execute o seguinte comando no console do Gerenciador de Pacotes do Visual Studio para criar uma nova migração para o Identity:
+```bash
+Add-Migration InitialIdentityMigration
+```
+- Atualizar o Banco de Dados: Após criar a migração, execute o seguinte comando para aplicar as alterações ao banco de dados:
+```bash
+Update-Database
+```
 ## Executando a Aplicação
 - Clone o repositório
 ```
@@ -52,4 +64,3 @@ git clone https://github.com/aharoncarvalho/GestaoPessoal.git
  - [Visual Studio 2022](https://visualstudio.microsoft.com/pt-br/vs/)
  - [PostgreSQL](https://www.postgresql.org/docs/)
  - [Docker](https://docs.docker.com/)
-
