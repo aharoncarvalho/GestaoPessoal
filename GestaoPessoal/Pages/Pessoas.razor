@@ -1,0 +1,86 @@
+﻿@page "/pessoas"
+@using Interfaces
+@inject IPessoaService pessoaService
+@inject IJSRuntime jsRuntime
+
+<h1 class="text-center mb-4">Lista de Pessoas</h1>
+
+<div class="d-flex justify-content-between mb-3">
+    <a href="/pessoa/add" class="btn btn-outline-dark">Adicionar Nova Pessoa</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-bordered shadow-sm w-100">
+        <thead class="table-dark">
+            <tr>
+                <th style="width: 10%;">Nome</th>
+                <th style="width: 5%;">Data de Nasc.</th>
+                <th style="width: 5%;">CPF</th>
+                <th style="width: 10%;">Rua</th>
+                <th style="width: 2%;">Nº</th>
+                <th style="width: 5%;">Logradouro</th>
+                <th style="width: 10%;">Cidade</th>
+                <th style="width: 2%;">Estado</th>
+                <th style="width: 10%;">CEP</th>
+                <th style="width: 15%;">Telefone</th>
+                <th style="width: 20%;">E-mail</th>
+                <th style="width: 20%;">Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var pessoa in pessoas)
+            {
+                <tr>
+                    <td>@pessoa.NomeCompleto</td>
+                    <td>@pessoa.DataNascimento.ToString("dd/MM/yyyy")</td>
+                    <td>@pessoa.CPF</td>
+                    <td>@pessoa.Rua</td>
+                    <td>@pessoa.Numero</td>
+                    <td>@pessoa.Logradouro</td>
+                    <td>@pessoa.Cidade</td>
+                    <td>@pessoa.Estado</td>
+                    <td>@pessoa.CEP</td>
+                    <td>@pessoa.Telefone</td>
+                    <td>@pessoa.Email</td>
+                    <td>
+                        <a href="/pessoa/edit/@pessoa.Id" class="btn btn-success btn-sm">
+                            <i class="oi oi-pencil"></i>
+                        </a>
+                        <button class="btn btn-danger btn-sm" @onclick="async ()=> await Delete(pessoa)">
+                            <i class="oi oi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
+
+
+
+
+
+
+@code {
+    private List<Data.Models.Pessoa> pessoas = new();
+
+    private async Task Delete(Data.Models.Pessoa pessoa)
+    {
+        bool confirmed = await jsRuntime.InvokeAsync<bool>("confirm", "Deseja mesmo deletar?");
+        if (confirmed)
+        {
+            if (pessoaService.Delete(pessoa.Id))
+            {
+                pessoas.Remove(pessoa);
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        pessoas = pessoaService.GetAll();
+        base.OnInitialized();
+    }
+}

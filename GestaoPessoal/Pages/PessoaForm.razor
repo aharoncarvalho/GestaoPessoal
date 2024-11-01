@@ -1,0 +1,172 @@
+﻿﻿
+@page "/pessoa/add"
+@page "/pessoa/edit/{userId:int}"
+@using Interfaces
+@using Services
+@inject IPessoaService pessoaService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject HttpClient Http
+<PageTitle>@Title</PageTitle>
+
+<h1>@Title</h1>
+<Alert Message="@message" alertClass="@alertClass" IsVisible="@showAlert" IsVisibleChanged="@((value) => showAlert = value)" />
+
+<div class="mt-5 mb-5">
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm Model="@pessoa" OnValidSubmit="Save">
+                <DataAnnotationsValidator />
+
+                <div class="form-group mb-3">
+                    <label for="NomeCompleto" class="form-label fw-bold">Nome Completo</label>
+                    <InputText class="form-control" @bind-Value="pessoa.NomeCompleto" required />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="DataNascimento" class="form-label fw-bold">Data de Nascimento</label>
+                    <InputDate class="form-control" @bind-Value="pessoa.DataNascimento" required />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="CPF" class="form-label fw-bold">CPF</label>
+                    <InputText class="form-control" @bind-Value="pessoa.CPF" id="cpf" maxlength="14" required/>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="CEP" class="form-label fw-bold">CEP</label>
+                    <InputText class="form-control" @bind-Value="pessoa.CEP" id="cep" maxlength="10" @oninput="async e => await ConsultarCep(e.Value?.ToString())" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="Cidade" class="form-label fw-bold">Cidade</label>
+                    <InputText class="form-control" @bind-Value="pessoa.Cidade" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="Estado" class="form-label fw-bold">Estado</label>
+                    <InputText class="form-control" @bind-Value="pessoa.Estado" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="Rua" class="form-label fw-bold">Rua</label>
+                    <InputText class="form-control" @bind-Value="pessoa.Rua" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="Numero" class="form-label fw-bold">Número</label>
+                    <InputNumber class="form-control" @bind-Value="pessoa.Numero" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="Logradouro" class="form-label fw-bold">Logradouro</label>
+                    <InputText class="form-control" @bind-Value="pessoa.Logradouro" maxlength="20" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="Telefone" class="form-label fw-bold">Telefone</label>
+                    <InputText class="form-control" @bind-Value="pessoa.Telefone" id="phone-mask" maxlength="15" />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="Email" class="form-label fw-bold">E-mail</label>
+                    <InputText class="form-control" @bind-Value="pessoa.Email" />
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" class="btn btn-secondary ml-2" @onclick="Voltar">Voltar</button>
+                </div>
+
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int UserId { get; set; }
+    private string message = string.Empty;
+    private string alertClass = string.Empty;
+    private bool showAlert = false;
+    Data.Models.Pessoa pessoa = new();
+    private string Title = "Cadastrar";
+
+    private void Save()
+    {
+        if (pessoaService.AddUpdate(pessoa))
+        {
+            message = "Salvo com sucesso!";
+            alertClass = "alert-success";
+            showAlert = true;
+            pessoa = new();
+        }
+        else
+        {
+            message = "Erro ao salvar!";
+            alertClass = "alert-danger";
+            showAlert = true;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        if (UserId > 0)
+        {
+            Title = "Editar";
+            pessoa = pessoaService.FindById(UserId);
+        }
+        base.OnInitialized();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("masks");
+        }
+    }
+
+    private async Task ConsultarCep(string cep)
+    {
+        if (!string.IsNullOrWhiteSpace(cep) && cep.Length == 9)
+        {
+            try
+            {
+                var response = await Http.GetFromJsonAsync<Data.Models.CEP>($"https://viacep.com.br/ws/{cep}/json/");
+                if (response != null && string.IsNullOrEmpty(response.erro))
+                {
+                    pessoa.Rua = response.logradouro;
+                    pessoa.Cidade = response.localidade;
+                    pessoa.Estado = response.uf;
+                }
+                else
+                {
+                    message = "CEP não encontrado!";
+                    alertClass = "alert-danger";
+                    showAlert = true;
+                    LimparCamposEndereco();
+                }
+            }
+            catch (Exception e)
+            {
+                message = $"Erro ao buscar o CEP: {e.Message}";
+                alertClass = "alert-danger";
+                showAlert = true;
+            }
+
+        }
+       
+    }
+
+    private void LimparCamposEndereco()
+    {
+        pessoa.Rua = string.Empty;
+        pessoa.Cidade = string.Empty;
+        pessoa.Estado = string.Empty;
+    }
+
+
+    private void Voltar() => Navigation.NavigateTo("/pessoas");
+}
+
